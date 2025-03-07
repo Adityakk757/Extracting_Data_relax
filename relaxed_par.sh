@@ -17,9 +17,19 @@ do
     # Define the output file based on the input file
     output_file="relax${num}_positions"
     
-    # Run the awk command and save the result to the output file
-    awk '/ATOMIC_POSITION/{f=1} f && --n>=0' n=20 "$input_file" > "$output_file"
-    echo "Processed $input_file and saved output to $output_file"
+    # Use awk to find the last occurrence of ATOMIC_POSITION and print 20 lines after it
+    awk '/ATOMIC_POSITION/{f=NR} END{if(f) print f}' "$input_file" | \
+    while read last_occurrence; do
+      # Print 20 lines starting from the line after the last occurrence of ATOMIC_POSITION
+      tail -n +$((last_occurrence + 1)) "$input_file" | head -n 20 > "$output_file"
+    done
+    
+    # Check if the output file is empty
+    if [ -s "$output_file" ]; then
+      echo "Processed $input_file and saved output to $output_file"
+    else
+      echo "No ATOMIC_POSITION found in $input_file or not enough lines after it."
+    fi
   else
     echo "File $input_file does not exist, skipping."
   fi
